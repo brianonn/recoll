@@ -1,4 +1,4 @@
-/* Copyright (C) 2004 J.F.Dockes
+/* Copyright (C) 2004-2021 J.F.Dockes
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
@@ -57,6 +57,8 @@ class RclConfig;
 class Aspell;
 
 namespace Rcl {
+
+class DbW;
 
 // Omega compatible values. We leave a hole for future omega values. Not sure 
 // it makes any sense to keep any level of omega compat given that the index
@@ -198,13 +200,11 @@ inline string wrap_prefix(const string& pfx)
  */
 class Db {
 public:
-    // A place for things we don't want visible here.
-    class Native;
-    friend class Native;
-
     /* General stuff (valid for query or update) ****************************/
     Db(const RclConfig *cfp);
     ~Db();
+    Db(const Db &) = delete;
+    Db& operator=(const Db &) = delete;
 
     enum OpenMode {DbRO, DbUpd, DbTrunc};
     bool isWriteMode(OpenMode mode) {
@@ -231,134 +231,16 @@ public:
      * special chars... 
      * @param with_aspell test for use with aspell, else for xapian speller
      */
-    static bool isSpellingCandidate(const string& term, bool with_aspell=true) {
-        if (term.empty() || term.length() > 50 || has_prefix(term))
-            return false;
-
-        Utf8Iter u8i(term);
-        if (with_aspell) {
-            // If spelling with aspell, CJK scripts are not candidates
-            if (TextSplit::isCJK(*u8i))
-                return false;
-        } else {
-#ifdef TESTING_XAPIAN_SPELL
-            // The Xapian speller (purely proximity-based) can be used
-            // for Katakana (when split as words which is not always
-            // completely feasible because of separator-less
-            // compounds). Currently we don't try to use the Xapian
-            // speller with other scripts with which it would be usable
-            // in the absence of aspell (it would indeed be better
-            // than nothing with e.g. european languages). This would
-            // require a few more config variables, maybe one day.
-            if (!TextSplit::isKATAKANA(*u8i)) {
-                return false;
-            }
-#else
-            return false;
-#endif
-        }
-        if (term.find_first_of(" !\"#$%&()*+,-./0123456789:;<=>?@[\\]^_`{|}~") 
-            != string::npos)
-            return false;
-        return true;
-    }
+    static bool isSpellingCandidate(const string& term, bool with_aspell=true);
 
     /** Return spelling suggestion */
-    bool getSpellingSuggestions(const string& word,
-                                std::vector<std::string>& suggs);
+    bool getSpellingSuggestions(const string& word, std::vector<std::string>& suggs);
 
     /* The next two, only for searchdata, should be somehow hidden */
     /* Return configured stop words */
     const StopList& getStopList() const {return m_stops;}
     /* Field name to prefix translation (ie: author -> 'A') */
-    bool fieldToTraits(const string& fldname, const FieldTraits **ftpp,
-                       bool isquery = false);
-
-    /* Update-related methods ******************************************/
-
-    /** Test if the db entry for the given udi is up to date.
-     *
-     * This is done by comparing the input and stored sigs. This is
-     * used both when indexing and querying (before opening a document 
-     * using stale info).
-     *
-     * **This assumes that the udi pertains to the main index (idxi==0).**
-     *
-     * Side-effect when the db is writeable and the document up to
-     * date: set the existence flag for the file document and all
-     * subdocs if any (for later use by 'purge()')
-     *
-     * @param udi Unique Document Identifier (as chosen by indexer).
-     * @param sig New signature (as computed by indexer).
-     * @param xdocid[output] Non-zero if doc existed. Should be considered 
-     *    as opaque, to be used for a possible later call to setExistingFlags()
-     *    Note that if inplaceReset is set, the return value is non-zero but not
-     *    an actual docid, it's only used as a flag in this case.
-     * @param osig[output] old signature.
-     */
-    bool needUpdate(const string &udi, const string& sig, 
-                    unsigned int *xdocid = 0, std::string *osig = 0);
-
-    /** Set the existance flags for the document and its eventual subdocuments
-     * 
-     * This can be called by the indexer after needUpdate() has returned true,
-     * if the indexer does not wish to actually re-index (e.g.: the doc is 
-     * known to cause errors).
-     */
-    void setExistingFlags(const string& udi, unsigned int docid);
-
-    /** Indicate if we are doing a systematic reindex. This complements
-        needUpdate() return */
-    bool inFullReset() {return o_inPlaceReset || m_mode == DbTrunc;}
-
-    /** Add or update document identified by unique identifier.
-     * @param config Config object to use. Can be the same as the member config
-     *   or a clone, to avoid sharing when called in multithread context.
-     * @param udi the Unique Document Identifier is opaque to us. 
-     *   Maximum size 150 bytes.
-     * @param parent_udi the UDI for the container document. In case of complex
-     *  embedding, this is not always the immediate parent but the UDI for
-     *  the container file (which may be a farther ancestor). It is
-     *  used for purging subdocuments when a file ceases to exist and
-     *  to set the existence flags of all subdocuments of a container
-     *  that is found to be up to date. In other words, the
-     *  parent_udi is the UDI for the ancestor of the document which
-     *  is subject to needUpdate() and physical existence tests (some
-     *  kind of file equivalent). Empty for top-level docs. Should
-     *  probably be renamed container_udi.
-     * @param doc container for document data. Should have been filled as 
-     *   much as possible depending on the document type. 
-     *   ** doc will be modified in a destructive way **
-     */
-    bool addOrUpdate(const string &udi, const string &parent_udi, Doc &doc);
-
-#ifdef IDX_THREADS
-    void waitUpdIdle();
-#endif
-
-    /** Delete document(s) for given UDI, including subdocs */
-    bool purgeFile(const string &udi, bool *existed = 0);
-    /** Delete subdocs with an out of date sig. We do this to purge
-        obsolete subdocs during a partial update where no general purge
-        will be done */
-    bool purgeOrphans(const string &udi);
-
-    /** Remove documents that no longer exist in the file system. This
-     * depends on the update map, which is built during
-     * indexing (needUpdate() / addOrUpdate()). 
-     *
-     * This should only be called after a full walk of
-     * the file system, else the update map will not be complete, and
-     * many documents will be deleted that shouldn't, which is why this
-     * has to be called externally, rcldb can't know if the indexing
-     * pass was complete or partial.
-     */
-    bool purge();
-
-    /** Create stem expansion database for given languages. */
-    bool createStemDbs(const std::vector<std::string> &langs);
-    /** Delete stem expansion database for given language. */
-    bool deleteStemDb(const string &lang);
+    bool fieldToTraits(const string& fldname, const FieldTraits **ftpp, bool isquery = false);
 
     /* Query-related methods ************************************/
 
@@ -513,6 +395,29 @@ public:
 
     const RclConfig *getConf() {return m_config;}
 
+    /** Test if the db entry for the given udi is up to date.
+     *
+     * This is done by comparing the input and stored sigs. This is
+     * used both when indexing and querying (before opening a document 
+     * using stale info).
+     *
+     * **This assumes that the udi pertains to the main index (idxi==0).**
+     *
+     * Side-effect when the db is writeable and the document up to
+     * date: set the existence flag for the file document and all
+     * subdocs if any (for later use by 'purge()')
+     *
+     * @param udi Unique Document Identifier (as chosen by indexer).
+     * @param sig New signature (as computed by indexer).
+     * @param xdocid[output] Non-zero if doc existed. Should be considered 
+     *    as opaque, to be used for a possible later call to setExistingFlags()
+     *    Note that if inplaceReset is set, the return value is non-zero but not
+     *    an actual docid, it's only used as a flag in this case.
+     * @param osig[output] old signature.
+     */
+    bool needUpdate(const string &udi, const string& sig, 
+                    unsigned int *xdocid = 0, std::string *osig = 0);
+
     /** 
         Activate the "in place reset" mode where all documents are
         considered as needing update. This is a global/per-process
@@ -530,40 +435,25 @@ public:
     void setFlushMb(int mb) {
         m_flushMb = mb;
     }
-    bool doFlush();
 
     // Use empty fn for no synonyms
     bool setSynGroupsFile(const std::string& fn);
     const SynGroups& getSynGroups() {return m_syngroups;}
     
-    // Mark all documents with an UDI having input as prefix as
-    // existing.  Only works if the UDIs for the store are
-    // hierarchical of course.  Used by FsIndexer to avoid purging
-    // files for a topdir which is on a removable file system and
-    // currently unmounted (topdir does not exist or is empty.
-    bool udiTreeMarkExisting(const string& udi);
+    class Native;
+    friend class Native;
+//    friend class DbW::NativeW;
 
     /* This has to be public for access by embedded Query::Native */
     Native *m_ndb{nullptr};
     
-private:
+public:
     const RclConfig *m_config;
     string     m_reason; // Error explanation
 
     // Xapian directories for additional databases to query
     vector<string> m_extraDbs;
     OpenMode m_mode{Db::DbRO};
-    // File existence vector: this is filled during the indexing pass. Any
-    // document whose bit is not set at the end is purged
-    vector<bool> updated;
-    // Text bytes indexed since beginning
-    long long    m_curtxtsz{0};
-    // Text bytes at last flush
-    long long    m_flushtxtsz{0};
-    // Text bytes at last fsoccup check
-    long long    m_occtxtsz{0};
-    // First fs occup check ?
-    int         m_occFirstCheck{1};
 
     // Synonym groups. There is no strict reason that this has to be
     // an Rcl::Db member, as it is only used when building each It
@@ -609,29 +499,19 @@ private:
     static bool o_inPlaceReset;
     /******* End logical constnesss */
 
-#ifdef IDX_THREADS
-    friend void *DbUpdWorker(void*);
-#endif // IDX_THREADS
-
-    // Internal form of setExistingFlags: no locking
-    void i_setExistingFlags(const string& udi, unsigned int docid);
     // Internal form of close, can be called during destruction
     bool i_close(bool final);
+    virtual void i_setExistingFlags(const string&, unsigned int) {}
     // Reinitialize when adding/removing additional dbs
     bool adjustdbs(); 
     bool idxTermMatch(int typ_sens, const string &lang, const string &term, 
                       TermMatchResult& result, int max = -1, 
                       const string& field = cstr_null);
 
-    // Flush when idxflushmb is reached
-    bool maybeflush(int64_t moretext);
     bool docExists(const string& uniterm);
 
     bool getDoc(const std::string& udi, int idxi, Doc& doc);
 
-    /* Copyconst and assignment private and forbidden */
-    Db(const Db &) {}
-    Db& operator=(const Db &) {return *this;};
 };
 
 // This has to go somewhere, and as it needs the Xapian version, this is
@@ -644,6 +524,6 @@ extern const string unsplitFilenameFieldName;
 extern string start_of_field_term;
 extern string end_of_field_term;
 
-}
+} // namespace Rcl
 
 #endif /* _DB_H_INCLUDED_ */

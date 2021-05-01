@@ -95,7 +95,7 @@ public:
     bool haveWildCards() {return m_haveWildCards;}
 
     /** Translate to Xapian query. rcldb knows about the void*  */
-    bool toNativeQuery(Rcl::Db &db, void *);
+    bool toNativeQuery(Db &db, void *);
 
     /** We become the owner of cl and will delete it */
     bool addClause(SearchDataClause* cl);
@@ -107,7 +107,7 @@ public:
      * @param threshold: don't use terms more frequent than the value 
      *     (proportion of docs where they occur)        
      */
-    bool maybeAddAutoPhrase(Rcl::Db &db, double threshold);
+    bool maybeAddAutoPhrase(Db &db, double threshold);
 
     const std::string& getStemLang() {return m_stemlang;}
 
@@ -221,8 +221,8 @@ private:
     // Xapian will do it anyway)
     void simplify();
 
-    bool expandFileTypes(Rcl::Db &db, std::vector<std::string>& exptps);
-    bool clausesToQuery(Rcl::Db &db, SClType tp,     
+    bool expandFileTypes(Db &db, std::vector<std::string>& exptps);
+    bool clausesToQuery(Db &db, SClType tp,     
                         std::vector<SearchDataClause*>& query,
                         string& reason, void *d);
     /* Copyconst and assignment private and forbidden */
@@ -247,7 +247,7 @@ public:
           m_modifiers(SDCM_NONE), m_weight(1.0), m_exclude(false), 
           m_rel(REL_CONTAINS) {}
     virtual ~SearchDataClause() {}
-    virtual bool toNativeQuery(Rcl::Db &db, void *) = 0;
+    virtual bool toNativeQuery(Db &db, void *) = 0;
     bool isFileName() const {return m_tp == SCLT_FILENAME ? true: false;}
     virtual std::string getReason() const {return m_reason;}
     virtual void getTerms(HighlightData&) const {}
@@ -337,7 +337,7 @@ public:
     virtual ~SearchDataClauseSimple() {}
 
     /** Translate to Xapian query */
-    virtual bool toNativeQuery(Rcl::Db &, void *) override;
+    virtual bool toNativeQuery(Db &, void *) override;
 
     virtual void getTerms(HighlightData& hldata) const override {
         hldata.append(m_hldata);
@@ -360,19 +360,19 @@ protected:
     // Current count of Xapian clauses, to check against expansion limit
     size_t  m_curcl;
 
-    bool processUserString(Rcl::Db &db, const string &iq,
+    bool processUserString(Db &db, const string &iq,
                            std::string &ermsg,
                            void* pq, int slack = 0, bool useNear = false);
-    bool expandTerm(Rcl::Db &db, std::string& ermsg, int mods, 
+    bool expandTerm(Db &db, std::string& ermsg, int mods, 
                     const std::string& term, 
                     std::vector<std::string>& exp, 
                     std::string& sterm, const std::string& prefix,
                     std::vector<std::string>* multiwords = 0);
     // After splitting entry on whitespace: process non-phrase element
-    void processSimpleSpan(Rcl::Db &db, string& ermsg, const string& span, 
+    void processSimpleSpan(Db &db, string& ermsg, const string& span, 
                            int mods, void *pq);
     // Process phrase/near element
-    void processPhraseOrNear(Rcl::Db &db, string& ermsg, TermProcQ *splitData, 
+    void processPhraseOrNear(Db &db, string& ermsg, TermProcQ *splitData, 
                              int mods, void *pq, bool useNear, int slack);
 };
 
@@ -397,7 +397,7 @@ public:
     virtual const std::string& gettext2() const {
         return m_t2;
     }
-    virtual bool toNativeQuery(Rcl::Db &db, void *) override;
+    virtual bool toNativeQuery(Db &db, void *) override;
 
 protected:
     std::string  m_t2;
@@ -421,7 +421,7 @@ public:
 
     virtual ~SearchDataClauseFilename() {}
 
-    virtual bool toNativeQuery(Rcl::Db &, void *) override;
+    virtual bool toNativeQuery(Db &, void *) override;
     virtual void dump(std::ostream& o) const override;
 };
 
@@ -456,7 +456,7 @@ public:
 
     virtual ~SearchDataClausePath() {}
 
-    virtual bool toNativeQuery(Rcl::Db &, void *) override;
+    virtual bool toNativeQuery(Db &, void *) override;
     virtual void dump(std::ostream& o) const override;
 };
 
@@ -472,7 +472,7 @@ public:
 
     virtual ~SearchDataClauseDist() {}
 
-    virtual bool toNativeQuery(Rcl::Db &, void *) override;
+    virtual bool toNativeQuery(Db &, void *) override;
     virtual int getslack() const {
         return m_slack;
     }
@@ -489,7 +489,7 @@ class SearchDataClauseSub : public SearchDataClause {
 public:
     SearchDataClauseSub(std::shared_ptr<SearchData> sub) 
         : SearchDataClause(SCLT_SUB), m_sub(sub) {}
-    virtual bool toNativeQuery(Rcl::Db &db, void *p) override {
+    virtual bool toNativeQuery(Db &db, void *p) override {
         bool ret = m_sub->toNativeQuery(db, p);
         if (!ret) 
             m_reason = m_sub->getReason();

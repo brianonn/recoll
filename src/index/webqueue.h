@@ -34,12 +34,12 @@ class CirCache;
 class RclConfig;
 class WebStore;
 namespace Rcl {
-class Db;
+class DbW;
 }
 
 class WebQueueIndexer : public FsTreeWalkerCB {
 public:
-    WebQueueIndexer(RclConfig *cnf, Rcl::Db *db);
+    WebQueueIndexer(RclConfig *cnf, Rcl::DbW *db);
     ~WebQueueIndexer();
 
     /** This is called by the top indexer in recollindex. 
@@ -64,7 +64,7 @@ public:
                       std::string *hittype = 0);
 private:
     RclConfig *m_config{nullptr};
-    Rcl::Db   *m_db{nullptr};
+    Rcl::DbW   *m_db{nullptr};
     WebStore  *m_cache{nullptr};
     std::string     m_queuedir;
     // Don't process the cache. Set by indexFiles().

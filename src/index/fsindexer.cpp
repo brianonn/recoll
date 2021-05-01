@@ -33,7 +33,7 @@
 #include "conftree.h"
 #include "rclconfig.h"
 #include "fstreewalk.h"
-#include "rcldb.h"
+#include "rcldbw.h"
 #include "readfile.h"
 #include "indexer.h"
 #include "transcode.h"
@@ -104,7 +104,7 @@ public:
         }
 };
 
-FsIndexer::FsIndexer(RclConfig *cnf, Rcl::Db *db) 
+FsIndexer::FsIndexer(RclConfig *cnf, Rcl::DbW *db) 
     : m_config(cnf), m_db(db),
       m_missing(new FSIFIMissingStore), m_detectxattronly(false),
       m_noretryfailed(false)

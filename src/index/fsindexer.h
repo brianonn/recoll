@@ -53,7 +53,7 @@ public:
      *
      * @param cnf Configuration data
      */
-    FsIndexer(RclConfig *cnf, Rcl::Db *db);
+    FsIndexer(RclConfig *cnf, Rcl::DbW *db);
     virtual ~FsIndexer();
 
     /** 
@@ -110,7 +110,7 @@ private:
 
     FsTreeWalker m_walker;
     RclConfig   *m_config;
-    Rcl::Db     *m_db;
+    Rcl::DbW    *m_db;
     string       m_reason;
     // Top/start directories list
     std::vector<std::string> m_tdl;

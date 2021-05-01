@@ -1,4 +1,4 @@
-/* Copyright (C) 2007 J.F.Dockes
+/* Copyright (C) 2007-2021 J.F.Dockes
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
@@ -25,52 +25,74 @@
 
 #include <xapian.h>
 
-#ifdef IDX_THREADS
-#include "workqueue.h"
-#endif // IDX_THREADS
 #include "xmacros.h"
 #include "log.h"
+
+#ifndef XAPIAN_AT_LEAST
+// Added in Xapian 1.4.2. Define it here for older versions
+#define XAPIAN_AT_LEAST(A,B,C)                                      \
+    (XAPIAN_MAJOR_VERSION > (A) ||                                  \
+     (XAPIAN_MAJOR_VERSION == (A) &&                                \
+      (XAPIAN_MINOR_VERSION > (B) ||                                \
+       (XAPIAN_MINOR_VERSION == (B) && XAPIAN_REVISION >= (C)))))
+#endif
+
+// Recoll index format version is stored in user metadata. When this change,
+// we can't open the db and will have to reindex.
+static const string cstr_RCL_IDX_VERSION_KEY("RCL_IDX_VERSION_KEY");
+static const string cstr_RCL_IDX_VERSION("1");
+static const string cstr_RCL_IDX_DESCRIPTOR_KEY("RCL_IDX_DESCRIPTOR_KEY");
+static const string cstr_mbreaks("rclmbreaks");
+static const string page_break_term = "XXPG/";
 
 namespace Rcl {
 
 class Query;
-
-#ifdef IDX_THREADS
-// Task for the index update thread. This can be 
-//  - add/update for a new / update document
-//  - delete for a deleted document
-//  - purgeOrphans when a multidoc file is updated during a partial pass (no 
-//    general purge). We want to remove subDocs that possibly don't
-//    exist anymore. We find them by their different sig
-// txtlen and doc are only valid for add/update else, len is (size_t)-1 and doc
-// is empty
-class DbUpdTask {
-public:
-    enum Op {AddOrUpdate, Delete, PurgeOrphans};
-    // Note that udi and uniterm are strictly equivalent and are
-    // passed both just to avoid recomputing uniterm which is
-    // available on the caller site.
-    // Take some care to avoid sharing string data (if string impl is cow)
-    DbUpdTask(Op _op, const string& ud, const string& un, 
-          Xapian::Document *d, size_t tl, string& rztxt)
-        : op(_op), udi(ud.begin(), ud.end()), uniterm(un.begin(), un.end()), 
-          doc(d), txtlen(tl) {
-        rawztext.swap(rztxt);
-    }
-    // Udi and uniterm equivalently designate the doc
-    Op op;
-    string udi;
-    string uniterm;
-    Xapian::Document *doc;
-    // txtlen is used to update the flush interval. It's -1 for a
-    // purge because we actually don't know it, and the code fakes a
-    // text length based on the term count.
-    size_t txtlen;
-    string rawztext; // Compressed doc text
-};
-#endif // IDX_THREADS
-
 class TextSplitDb;
+
+// Some prefixes that we could get from the fields file, but are not going
+// to ever change.
+extern const string fileext_prefix;
+extern const string mimetype_prefix;
+extern const string xapday_prefix;
+extern const string xapmonth_prefix;
+extern const string xapyear_prefix;
+extern const string pathelt_prefix;
+extern const string parent_prefix;
+// Special term to mark documents with children.
+extern const string has_children_term;
+extern const string unsplitfilename_prefix;
+// Synthetic abstract marker (to discriminate from abstract actually
+// found in document)
+extern const string cstr_syntAbs;
+// Special terms to mark begin/end of field (for anchored searches), and
+// page breaks
+extern string start_of_field_term;
+extern string end_of_field_term;
+// Empty string md5s 
+extern const string cstr_md5empty;
+extern const string udi_prefix;
+
+// Compute the unique term used to link documents to their origin. 
+// "Q" + external udi
+static inline string make_uniterm(const string& udi)
+{
+    string uniterm(wrap_prefix(udi_prefix));
+    uniterm.append(udi);
+    return uniterm;
+}
+
+// Compute parent term used to link documents to their parent document (if any)
+// "F" + parent external udi
+static inline string make_parentterm(const string& udi)
+{
+    // I prefer to be in possible conflict with omega than with
+    // user-defined fields (Xxxx) that we also allow. "F" is currently
+    // not used by omega (2008-07)
+    string pterm(wrap_prefix(parent_prefix));
+    pterm.append(udi);
+    return pterm;
+}
 
 // A class for data and methods that would have to expose
 // Xapian-specific stuff if they were in Rcl::Db. There could actually be
@@ -78,57 +100,18 @@ class TextSplitDb;
 // common.
 class Db::Native {
  public:
-    Db  *m_rcldb; // Parent
-    bool m_isopen;
-    bool m_iswritable;
-    bool m_noversionwrite; //Set if open failed because of version mismatch!
-    bool m_storetext{false};
-#ifdef IDX_THREADS
-    WorkQueue<DbUpdTask*> m_wqueue;
-    std::mutex m_mutex;
-    long long  m_totalworkns;
-    bool m_havewriteq;
-    void maybeStartThreads();
-#endif // IDX_THREADS
-
-    // Indexing 
-    Xapian::WritableDatabase xwdb;
-    // Querying (active even if the wdb is too)
-    Xapian::Database xrdb;
-
     Native(Db *db);
-    ~Native();
+    virtual ~Native();
 
-#ifdef IDX_THREADS
-    friend void *DbUpdWorker(void*);
-#endif // IDX_THREADS
+    virtual void openWrite(const std::string& dir, Db::OpenMode mode) { return;}
+    virtual void closeWrite() {}
 
-    void openWrite(const std::string& dir, Db::OpenMode mode);
     void openRead(const string& dir);
 
     // Determine if an existing index is of the full-text-storing kind
     // by looking at the index metadata. Stores the result in m_storetext
     void storesDocText(Xapian::Database&);
     
-    // Final steps of doc update, part which need to be single-threaded
-    bool addOrUpdateWrite(const string& udi, const string& uniterm, 
-              Xapian::Document *doc, size_t txtlen
-                          , const string& rawztext);
-
-    /** Delete all documents which are contained in the input document, 
-     * which must be a file-level one.
-     * 
-     * @param onlyOrphans if true, only delete documents which have
-     * not the same signature as the input. This is used to delete docs
-     * which do not exist any more in the file after an update, for
-     * example the tail messages after a folder truncation). If false,
-     * delete all.
-     * @param udi the parent document identifier.
-     * @param uniterm equivalent to udi, passed just to avoid recomputing.
-     */
-    bool purgeFileWrite(bool onlyOrphans, const string& udi, 
-            const string& uniterm);
-
     bool getPagePositions(Xapian::docid docid, vector<int>& vpos);
     int getPageNumberForPosition(const vector<int>& pbreaks, int pos);
 
@@ -156,16 +139,6 @@ class Db::Native {
 
     /** Check if doc is indexed by term */
     bool hasTerm(const string& udi, int idxi, const string& term);
-
-    /** Update existing Xapian document for pure extended attrs change */
-    bool docToXdocXattrOnly(TextSplitDb *splitter, const string &udi, 
-                Doc &doc, Xapian::Document& xdoc);
-    /** Remove all terms currently indexed for field defined by idx prefix */
-    bool clearField(Xapian::Document& xdoc, const string& pfx, 
-            Xapian::termcount wdfdec);
-
-    /** Check if term wdf is 0 and remove term if so */
-    bool clearDocTermIfWdf0(Xapian::Document& xdoc, const string& term);
 
     /** Compute list of subdocuments for a given udi. We look for documents 
      * indexed by a parent term matching the udi, the posting list for the 
@@ -207,22 +180,24 @@ class Db::Native {
 
     bool getRawText(Xapian::docid docid, string& rawtext);
 
-    void deleteDocument(Xapian::docid docid) {
-        string metareason;
-        XAPTRY(xwdb.set_metadata(rawtextMetaKey(docid), string()),
-               xwdb, metareason);
-        if (!metareason.empty()) {
-            LOGERR("deleteDocument: set_metadata error: " <<
-                   metareason << "\n");
-            // not fatal
-        }
-        xwdb.delete_document(docid);
-    }
+    
+    Db  *m_rcldb; // Parent
+    bool m_isopen;
+    bool m_iswritable;
+    bool m_noversionwrite; //Set if open failed because of version mismatch!
+    bool m_storetext{false};
+#ifdef IDX_THREADS
+    std::mutex m_mutex;
+#endif
+
+    // Querying (active even if the wdb is too)
+    Xapian::Database xrdb;
 };
 
 // This is the word position offset at which we index the body text
 // (abstract, keywords, etc.. are stored before this)
 static const unsigned int baseTextPosition = 100000;
 
-}
+} // namespace Rcl
+
 #endif /* _rcldb_p_h_included_ */

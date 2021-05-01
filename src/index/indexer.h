@@ -24,7 +24,7 @@
 #include <mutex>
 
 #include "rclconfig.h"
-#include "rcldb.h"
+#include "rcldbw.h"
 #include "rcldoc.h"
 #include "idxstatus.h"
 
@@ -92,7 +92,7 @@ public:
     void setInPlaceReset() {m_db.setInPlaceReset();}
 private:
     RclConfig *m_config;
-    Rcl::Db    m_db;
+    Rcl::DbW  m_db;
     FsIndexer *m_fsindexer{nullptr}; 
     bool       m_doweb{false};
     WebQueueIndexer *m_webindexer{nullptr}; 

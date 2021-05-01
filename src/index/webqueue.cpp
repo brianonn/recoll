@@ -173,7 +173,7 @@ public:
 
 // Initialize. Compute paths and create a temporary directory that will be
 // used by internfile()
-WebQueueIndexer::WebQueueIndexer(RclConfig *cnf, Rcl::Db *db)
+WebQueueIndexer::WebQueueIndexer(RclConfig *cnf, Rcl::DbW *db)
     : m_config(cnf), m_db(db)
 {
     m_queuedir = m_config->getWebQueueDir();
