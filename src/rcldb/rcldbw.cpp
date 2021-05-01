@@ -35,6 +35,7 @@ using namespace std;
 #include "xapian.h"
 
 #include "rclconfig.h"
+#define LOGGER_LOCAL_LOGINC 2
 #include "log.h"
 #include "rclquery.h"
 #include "rclquery_p.h"
@@ -224,16 +225,13 @@ public:
     vector <pair<int, int> > m_pageincrvec;
 };
 
-DbW::NativeW::NativeW(Db *db) 
+DbW::NativeW::NativeW(DbW *db) 
     : Db::Native(db)
 #ifdef IDX_THREADS
-    , m_wqueue("DbUpd", m_rcldb->m_config->getThrConf(RclConfig::ThrDbWrite).first),
-      m_totalworkns(0LL), m_havewriteq(false)
+    , m_wqueue("DbUpd", m_rcldb->m_config->getThrConf(RclConfig::ThrDbWrite).first)
 #endif // IDX_THREADS
 { 
-    m_iswritable = true;
-    m_noversionwrite = false;
-    m_rcldbw = dynamic_cast<DbW*>(db);
+    m_rcldbw = db;
     LOGDEB1("Native::Native: me " << this << "\n");
 }
 
@@ -319,9 +317,7 @@ void DbW::NativeW::maybeStartThreads()
 
 void DbW::NativeW::openWrite(const string& dir, Db::OpenMode mode)
 {
-    int action = (mode == Db::DbUpd) ? Xapian::DB_CREATE_OR_OPEN :
-        Xapian::DB_CREATE_OR_OVERWRITE;
-    updated = vector<bool>(xwdb.get_lastdocid() + 1, false);
+    int action = (mode == Db::DbUpd) ? Xapian::DB_CREATE_OR_OPEN : Xapian::DB_CREATE_OR_OVERWRITE;
 
 #ifdef _WIN32
     // On Windows, Xapian is quite bad at erasing partial db which can
@@ -409,6 +405,7 @@ void DbW::NativeW::openWrite(const string& dir, Db::OpenMode mode)
     // so the query db is now a clone of the update one.
     xrdb = xwdb;
 
+    updated = vector<bool>(xwdb.get_lastdocid() + 1, false);
 #ifdef IDX_THREADS
     maybeStartThreads();
 #endif
@@ -416,6 +413,9 @@ void DbW::NativeW::openWrite(const string& dir, Db::OpenMode mode)
 
 void DbW::NativeW::closeWrite()
 {
+    LOGDEB("DbW::NativeW::closeWrite()\n");
+    if (!m_iswritable)
+        return;
 #ifdef IDX_THREADS
     m_rcldbw->waitUpdIdle();
 #endif
@@ -758,13 +758,20 @@ bool DbW::NativeW::docToXdocXattrOnly(TextSplitDb *splitter, const string &udi,
 DbW::DbW(const RclConfig *cfp)
     : Db(cfp)
 {
-    m_ndbw = new NativeW(this);
-    delete m_ndb;
-    m_ndb = m_ndbw;
+    createNative();
 }
 
 DbW::~DbW()
 {
+    LOGDEB1("DbW::~DbW()\n");
+}
+
+bool DbW::createNative()
+{
+    m_ndbw = new NativeW(this);
+    delete m_ndb;
+    m_ndb = m_ndbw;
+    return nullptr != m_ndb;
 }
 
 // Add document in internal form to the database: index the terms in

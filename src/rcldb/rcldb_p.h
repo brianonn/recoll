@@ -182,9 +182,9 @@ class Db::Native {
 
     
     Db  *m_rcldb; // Parent
-    bool m_isopen;
-    bool m_iswritable;
-    bool m_noversionwrite; //Set if open failed because of version mismatch!
+    bool m_isopen{false};
+    bool m_iswritable{false};
+    bool m_noversionwrite{false}; //Set if open failed because of version mismatch!
     bool m_storetext{false};
 #ifdef IDX_THREADS
     std::mutex m_mutex;

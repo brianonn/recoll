@@ -24,6 +24,21 @@
 #include <mutex>
 
 #include "idxdiags.h"
+#include "rclconfig.h"
+#include "idxstatus.h"
+
+void readIdxStatus(RclConfig *config, DbIxStatus &status)
+{
+    ConfSimple cs(config->getIdxStatusFile().c_str(), 1);
+    status.phase = DbIxStatus::Phase(cs.getInt("phase", 0));
+    cs.get("fn", status.fn);
+    status.docsdone = (int)cs.getInt("docsdone", 0);
+    status.filesdone = (int)cs.getInt("filesdone", 0);
+    status.fileerrors = (int)cs.getInt("fileerrors", 0);
+    status.dbtotdocs = (int)cs.getInt("dbtotdocs", 0);
+    status.totfiles = (int)cs.getInt("totfiles", 0);
+    status.hasmonitor = cs.getBool("hasmonitor", false);
+}
 
 static std::mutex diagmutex;
 

@@ -65,7 +65,7 @@ public:
 
 class DbW::NativeW : public Db::Native {
 public:
-    NativeW(Db *db);
+    NativeW(DbW *db);
     virtual ~NativeW();
 
     virtual void openWrite(const std::string& dir, Db::OpenMode mode) override;
@@ -115,8 +115,8 @@ public:
 
 #ifdef IDX_THREADS
     WorkQueue<DbUpdTask*> m_wqueue;
-    long long  m_totalworkns;
-    bool m_havewriteq;
+    long long  m_totalworkns{0};
+    bool m_havewriteq{false};
     void maybeStartThreads();
     friend void *DbUpdWorker(void*);
 #endif // IDX_THREADS

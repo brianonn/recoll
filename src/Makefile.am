@@ -100,8 +100,6 @@ index/fsfetcher.cpp \
 index/fsfetcher.h \
 index/idxdiags.h \
 index/idxdiags.cpp \
-index/idxstatus.h \
-index/idxstatus.cpp \
 index/mimetype.cpp \
 index/mimetype.h \
 index/rclmon.h \
@@ -168,9 +166,6 @@ query/wasatorcl.h \
 rcldb/rcldb.cpp \
 rcldb/rcldb.h \
 rcldb/rcldb_p.h \
-rcldb/rcldbw.cpp \
-rcldb/rcldbw.h \
-rcldb/rcldbw_p.h \
 rcldb/daterange.cpp \
 rcldb/daterange.h \
 rcldb/expansiondbs.cpp \
@@ -271,8 +266,6 @@ utils/utf8iter.h \
 utils/wipedir.cpp \
 utils/wipedir.h \
 utils/workqueue.h \
-utils/x11mon.cpp \
-utils/x11mon.h \
 utils/zlibut.cpp \
 utils/zlibut.h \
 xaposix/safefcntl.h \
@@ -290,7 +283,7 @@ AM_YFLAGS = -d
 # need it
 librecoll_la_LDFLAGS = -release $(VERSION) -no-undefined @NO_UNDEF_LINK_FLAG@
 
-librecoll_la_LIBADD = $(XSLT_LIBS) $(LIBXAPIAN) $(LIBICONV) $(X_LIBX11) $(LIBTHREADS)
+librecoll_la_LIBADD = $(XSLT_LIBS) $(LIBXAPIAN) $(LIBICONV) $(LIBTHREADS)
 
 # There is probably a better way to do this. The KIO needs to be linked
 # with librecoll, but librecoll is installed into a non-standard place
@@ -323,15 +316,22 @@ recollindex_SOURCES = \
     index/checkindexed.h \
     index/fsindexer.cpp \
     index/fsindexer.h \
+    index/idxstatus.h \
+    index/idxstatus.cpp \
     index/indexer.cpp \
     index/indexer.h \
     index/rclmonprc.cpp \
     index/rclmonrcv.cpp \
     index/recollindex.cpp \
     index/webqueue.cpp \
-    index/webqueue.h
+    index/webqueue.h \
+    rcldb/rcldbw.cpp \
+    rcldb/rcldbw.h \
+    rcldb/rcldbw_p.h \
+    utils/x11mon.cpp \
+    utils/x11mon.h
 
-recollindex_LDADD = librecoll.la 
+recollindex_LDADD = librecoll.la $(LIBXAPIAN) $(X_LIBX11) 
 
 recollq_SOURCES = query/recollqmain.cpp
 recollq_LDADD = librecoll.la

@@ -26,6 +26,7 @@
 #include "rclinit.h"
 #include "rclconfig.h"
 #include "rcldb.h"
+#include "rcldbw.h"
 #include "searchdata.h"
 #include "rclquery.h"
 #include "pathut.h"
@@ -826,7 +827,8 @@ PyTypeObject recoll_DocType = {
 typedef struct recoll_DbObject {
     PyObject_HEAD
     /* Type-specific fields go here. */
-    Rcl::Db *db;
+    Rcl::Db *db{nullptr};
+    Rcl::DbW *dbw{nullptr};
     std::shared_ptr<RclConfig> rclconfig;
 } recoll_DbObject;
 
@@ -1631,7 +1633,8 @@ Db_close(recoll_DbObject *self)
     LOGDEB("Db_close. self " << self << "\n");
     if (self->db) {
         delete self->db;
-        self->db = 0;
+        self->db = nullptr;
+        self->dbw = nullptr;
     }
     self->rclconfig.reset();
     Py_RETURN_NONE;
@@ -1655,7 +1658,8 @@ Db_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = (recoll_DbObject *)type->tp_alloc(type, 0);
     if (self == 0) 
         return 0;
-    self->db = 0;
+    self->db = nullptr;
+    self->dbw = nullptr;
     return (PyObject *)self;
 }
 
@@ -1696,7 +1700,12 @@ Db_init(recoll_DbObject *self, PyObject *args, PyObject *kwargs)
     }
 
     delete self->db;
-    self->db = new Rcl::Db(self->rclconfig.get());
+    if (writable) {
+        self->dbw = new Rcl::DbW(self->rclconfig.get());
+        self->db = self->dbw;
+    } else {
+        self->db = new Rcl::Db(self->rclconfig.get());
+    }
     if (!self->db->open(writable ? Rcl::Db::DbUpd : Rcl::Db::DbRO)) {
         LOGERR("Db_init: db open error\n");
         PyErr_SetString(PyExc_EnvironmentError, "Can't open index");
@@ -1959,13 +1968,13 @@ Db_delete(recoll_DbObject* self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTuple(args, "es:Db_delete", "utf-8", &udi)) {
         return 0;
     }
-    if (self->db == 0) {
+    if (nullptr == self->dbw) {
         LOGERR("Db_delete: db not found " << self->db << "\n");
         PyErr_SetString(PyExc_AttributeError, "db");
         PyMem_Free(udi);
         return 0;
     }
-    bool result = self->db->purgeFile(udi);
+    bool result = self->dbw->purgeFile(udi);
     PyMem_Free(udi);
     return Py_BuildValue("i", result);
 }
@@ -1974,12 +1983,12 @@ static PyObject *
 Db_purge(recoll_DbObject* self)
 {
     LOGDEB0("Db_purge\n");
-    if (self->db == 0) {
+    if (nullptr == self->dbw) {
         LOGERR("Db_purge: db not found " << self->db << "\n");
         PyErr_SetString(PyExc_AttributeError, "db");
         return 0;
     }
-    bool result = self->db->purge();
+    bool result = self->dbw->purge();
     return Py_BuildValue("i", result);
 }
 
@@ -2001,7 +2010,7 @@ Db_addOrUpdate(recoll_DbObject* self, PyObject *args, PyObject *)
     PyMem_Free(sudi);
     PyMem_Free(sparent_udi);
 
-    if (self->db == 0) {
+    if (nullptr == self->dbw) {
         LOGERR("Db_addOrUpdate: db not found " << self->db << "\n");
         PyErr_SetString(PyExc_AttributeError, "db");
         return 0;
@@ -2011,7 +2020,7 @@ Db_addOrUpdate(recoll_DbObject* self, PyObject *args, PyObject *)
         PyErr_SetString(PyExc_AttributeError, "doc");
         return 0;
     }
-    if (!self->db->addOrUpdate(udi, parent_udi, *pydoc->doc)) {
+    if (!self->dbw->addOrUpdate(udi, parent_udi, *pydoc->doc)) {
         LOGERR("Db_addOrUpdate: rcldb error\n");
         PyErr_SetString(PyExc_AttributeError, "rcldb error");
         return 0;

@@ -27,7 +27,7 @@ public:
     ~DbW();
     DbW(const DbW &) = delete;
     DbW& operator=(const DbW &) = delete;
-
+    virtual bool createNative() override;
 
     /** Set the existance flags for the document and its eventual subdocuments
      * 

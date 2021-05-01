@@ -202,7 +202,7 @@ class Db {
 public:
     /* General stuff (valid for query or update) ****************************/
     Db(const RclConfig *cfp);
-    ~Db();
+    virtual ~Db();
     Db(const Db &) = delete;
     Db& operator=(const Db &) = delete;
 
@@ -511,7 +511,7 @@ public:
     bool docExists(const string& uniterm);
 
     bool getDoc(const std::string& udi, int idxi, Doc& doc);
-
+    virtual bool createNative();
 };
 
 // This has to go somewhere, and as it needs the Xapian version, this is

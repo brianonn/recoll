@@ -35,6 +35,7 @@ using namespace std;
 #include "xapian.h"
 
 #include "rclconfig.h"
+#define LOGGER_LOCAL_LOGINC 2
 #include "log.h"
 #include "rcldb.h"
 #include "rcldb_p.h"
@@ -100,8 +101,7 @@ string version_string(){
 }
 
 Db::Native::Native(Db *db) 
-    : m_rcldb(db), m_isopen(false), m_iswritable(false),
-      m_noversionwrite(false)
+    : m_rcldb(db)
 { 
     LOGDEB1("Native::Native: me " << this << "\n");
 }
@@ -425,7 +425,7 @@ Db::Db(const RclConfig *cfp)
 
 Db::~Db()
 {
-    LOGDEB2("Db::~Db\n");
+    LOGDEB1("Db::~Db\n");
     if (nullptr == m_ndb)
         return;
     LOGDEB("Db::~Db: isopen " << m_ndb->m_isopen << " m_iswritable " <<
@@ -542,29 +542,34 @@ bool Db::close()
     return i_close(false);
 }
 
+bool Db::createNative()
+{
+    m_ndb = new Native(this);
+    return nullptr != m_ndb;
+}
+
 bool Db::i_close(bool final)
 {
-    if (m_ndb == 0)
+    if (nullptr == m_ndb)
         return false;
     LOGDEB("Db::i_close(" << final << "): m_isopen " << m_ndb->m_isopen <<
            " m_iswritable " << m_ndb->m_iswritable << "\n");
-    if (m_ndb->m_isopen == false && !final) 
+    if (!m_ndb->m_isopen && !final) 
         return true;
 
+    bool w = m_ndb->m_iswritable;
+    LOGDEB("Db::i_close: writable: " << m_ndb->m_iswritable << "\n");
     string ermsg;
     try {
-        bool w = m_ndb->m_iswritable;
-        if (w) {
+        if (w)
             m_ndb->closeWrite();
-        }
         deleteZ(m_ndb);
         if (w)
             LOGDEB("Rcl::Db:close() xapian close done.\n");
         if (final) {
             return true;
         }
-        m_ndb = new Native(this);
-        if (m_ndb) {
+        if (createNative()) {
             return true;
         }
         LOGERR("Rcl::Db::close(): cant recreate db object\n");
