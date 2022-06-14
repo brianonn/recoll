@@ -578,6 +578,7 @@ sampleconf/mimemap sampleconf/mimeview sampleconf/macos/mimeview \
 sampleconf/recoll.conf sampleconf/recoll.qss \
 sampleconf/recoll-common.css sampleconf/recoll-common.qss \
 sampleconf/recoll-dark.qss sampleconf/recoll-dark.css \
+qtgui/darkstyle/dark/darkstyle.qss sampleconf/recoll-dark.qss sampleconf/recoll-dark.css \
 \
 testmains/Makefile.am \
 \
@@ -671,6 +672,7 @@ sampleconf/mimeview \
 sampleconf/recoll-common.css \
 sampleconf/recoll-common.qss \
 sampleconf/recoll-dark.css \
+qtgui/darkstyle/dark/darkstyle.qss \
 sampleconf/recoll-dark.qss \
 sampleconf/recoll.conf \
 sampleconf/recoll.qss

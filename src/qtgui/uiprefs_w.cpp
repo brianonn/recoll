@@ -577,7 +577,7 @@ void UIPrefsDialog::showStylesheetDialog()
 }
 void UIPrefsDialog::setDarkMode()
 {
-    auto fn = path_cat(path_cat(theconfig->getDatadir(), "examples"), "recoll-dark.qss");
+    auto fn = path_cat(path_cat(theconfig->getDatadir(), "examples"), "darkstyle.qss");
     qssFile = u8s2qs(fn);
     darkMode = true;
     setSSButState();
