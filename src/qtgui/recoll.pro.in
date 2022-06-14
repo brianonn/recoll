@@ -128,7 +128,7 @@ FORMS   = \
         widgets/editdialog.ui \
         widgets/listdialog.ui
         
-RESOURCES = recoll.qrc
+RESOURCES = recoll.qrc darkstyle/dark/darkstyle.qrc
 
 unix {
   UI_DIR = .ui
