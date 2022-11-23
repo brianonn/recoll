@@ -550,6 +550,11 @@ qtgui/xmltosd.cpp \
 qtgui/xmltosd.h \
 \
 python/README.txt \
+pyaspell/aspell.c \
+pyaspell/LICENSE \
+pyaspell/pyaspell.py \
+pyaspell/README.rst \
+pyaspell/setup.py.in \
 python/pychm/AUTHORS \
 python/pychm/COPYING \
 python/pychm/MANIFEST.in \
@@ -653,6 +658,28 @@ rclpychm-clean:
 	rm -rf python/pychm/dist/*
 endif
 
+if MAKEPYTHONASPELL
+all-local:: rclpyaspell
+install-exec-local:: rclpyaspell-install
+clean-local:: rclpyaspell-clean
+rclpyaspell:
+	(cd python/pyaspell; set -x; \
+        for v in 3;do \
+        test -n "`which python$${v}`" && python$${v} setup.py build;\
+        done \
+        )
+rclpyaspell-install:
+	(cd python/pyaspell; set -x; \
+        for v in 3;do test -n "`which python$${v}`" && \
+        python$${v} setup.py install \
+         --prefix=${prefix} --root=$${DESTDIR:-/} $(OPTSFORPYTHON); \
+        done \
+        )
+rclpyaspell-clean:
+	rm -rf python/pyaspell/build
+	rm -rf python/pyaspell/dist/*
+endif
+
 if MAKEQT
 all-local:: recollqt
 recollqt: librecoll.la
@@ -706,6 +733,7 @@ filters/openxml-meta.xsl \
 filters/ppt-dump.py \
 filters/rcl7z.py \
 filters/rclaptosidman \
+filters/rclaspell-sugg.py \
 filters/rclaudio.py \
 filters/rclbasehandler.py \
 filters/rclbibtex.sh \
@@ -783,7 +811,7 @@ install-data-hook:
 	(cd $(DESTDIR)/$(filterdir); \
 	chmod a+x rcl* ppt-dump.py xls-dump.py xlsxmltocsv.py hotrecoll.py; \
 	chmod a+x recoll-we-move-files.py ../examples/rclmon.sh kosplitter.py; \
-	chmod a+x thunderbird-open-message.sh; \
+	chmod a+x thunderbird-open-message.sh rclaspell-sugg.py; \
 	chmod 0644 msodump.zip recollepub.zip rclexecm.py rcllatinstops.zip \
         rclconfig.py conftree.py rclmidi.py rclexec1.py rcluncomp.py rclxslt.py)
 
