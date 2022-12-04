@@ -156,27 +156,28 @@ public:
      * @return the exec output status (0 if ok), or -1
      */
     int doexec(const std::string& cmd, const std::vector<std::string>& args,
-               const std::string *input = 0,
-               std::string *output = 0);
+               const std::string *input = 0, std::string *output = 0);
 
     /** Same as doexec but cmd and args in one vector */
-    int doexec1(const std::vector<std::string>& args,
-                const std::string *input = 0,
-                std::string *output = 0) {
-        if (args.empty()) {
+    int doexec(const std::vector<std::string>& args, const std::string *in=0, std::string *out=0) {
+        if (args.empty())
             return -1;
-        }
-        return doexec(args[0],
-                      std::vector<std::string>(args.begin() + 1, args.end()),
-                      input, output);
+        return doexec(args[0], std::vector<std::string>(args.begin() + 1, args.end()), in, out);
     }
 
     /*
-     * The next four methods can be used when a Q/A dialog needs to be
-     * performed with the command
+     * The next methods can be used when a Q/A dialog needs to be performed with the command
      */
     int startExec(const std::string& cmd, const std::vector<std::string>& args,
                   bool has_input, bool has_output);
+    /** Same as startExec but cmd and args in one vector */
+    int startExec(const std::vector<std::string>& args, bool has_input, bool has_output) {
+        if (args.empty())
+            return -1;
+        return startExec(args[0], std::vector<std::string>(args.begin()+1, args.end()),
+                         has_input, has_output);
+    }
+        
     int send(const std::string& data);
     int receive(std::string& data, int cnt = -1);
 
@@ -237,7 +238,7 @@ public:
      * @param path exec seach path to use instead of getenv(PATH)
      * @return true if found
      */
-    static bool which(const std::string& cmd, std::string& exe, const char* path = 0);
+    static bool which(const std::string& cmd, std::string& exe, const char* path = nullptr);
 
     /**
      * Execute command and return stdout output in a string
