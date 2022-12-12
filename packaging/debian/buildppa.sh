@@ -12,10 +12,9 @@ SERIES="bionic focal jammy kinetic"
 
 PPA_KEYID=7808CE96D38B9201
 
-RCLVERS=1.33.2
-SCOPEVERS=1.20.2.4
+RCLVERS=1.33.3
 GSSPVERS=1.1.1
-PPAVERS=2
+PPAVERS=3
 
 #
 #Y=/y
@@ -86,7 +85,7 @@ done
 
 ### KIO.
 series=$SERIES
-#series=
+series=
 
 debdir=debiankio
 topdir=kio-recoll-${RCLVERS}
@@ -121,7 +120,7 @@ done
 
 ### Krunner plugin
 series=$SERIES
-series=
+#series=
 
 debdir=debiankrunner
 topdir=krunner-recoll-${RCLVERS}
