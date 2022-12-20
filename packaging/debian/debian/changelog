@@ -1,3 +1,9 @@
+recoll (1.33.4-1~ppaPPAVERS~SERIES1) SERIES; urgency=low
+
+  * rclaudio: improved support for dsf files id3 metadata and embedded images
+  
+ -- Jean-Francois Dockes <jf@dockes.org>  Tue, 20 Dec 2022 10:54:00 +0100
+
 recoll (1.33.3-1~ppaPPAVERS~SERIES1) SERIES; urgency=low
 
   * New KDE Krunner plugin: get recoll search results in krunner. No changes needed to main recoll
