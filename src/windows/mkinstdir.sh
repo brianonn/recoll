@@ -24,8 +24,8 @@ test -d $DESTDIR || mkdir $DESTDIR || fatal cant create $DESTDIR
 
 BUILD=MSVC
 #BUILD=MINGW
-WEB=WEBKIT
-#WEB=WEBENGINE
+#WEB=WEBKIT
+WEB=WEBENGINE
 
 if test $BUILD = MSVC ; then
     # Recoll src tree
@@ -37,9 +37,9 @@ if test $BUILD = MSVC ; then
     LIBXSLT=${RCLDEPS}/msvc/libxslt/libxslt-1.1.29/win32/bin.msvc/libxslt.dll
     ZLIB=${RCLDEPS}/msvc/zlib-1.2.11
     # Qt
-    QTA=Desktop_Qt_5_14_2_MSVC2017_32bit-Release/release
-    QTBIN=C:/Qt/5.14.2/msvc2017/bin
-    MINGWBIN=C:/Qt/Tools/mingw730_32/bin/
+    QTA=Desktop_Qt_5_15_2_MSVC2019_32bit-Release/release
+    QTBIN=C:/Qt/5.15.2/msvc2019/bin
+    MINGWBIN=C:/qt/5.15.2/mingw81_32/bin
 else
     # Recoll src tree
     RCL=/c/recoll/src/
@@ -320,14 +320,20 @@ copypyrecoll()
     if test $BUILD = MSVC ; then
         DEST=${DESTDIR}/Share/dist
         test -d $DEST || mkdir $DEST || fatal cant create $DEST
-        rm -f ${DEST}/*
-        for v in 37;do
-            PYRCLWHEEL=${PYRECOLL}/dist/Recoll-${VERSION}-cp${v}-cp${v}m-win32.whl
-            chkcp ${PYRCLWHEEL} $DEST
-        done
-        for v in 38 39;do
-            PYRCLWHEEL=${PYRECOLL}/dist/Recoll-${VERSION}-cp${v}-cp${v}-win32.whl
-            chkcp ${PYRCLWHEEL} $DEST
+        rm -f ${DEST}/Recoll*.egg ${DEST}/Recoll*.whl
+        for v in 7 8 9 10 11;do
+            if test ${v} = "7" ; then
+                m=m
+            else
+                m=""
+            fi
+            PYRCLDIST=${PYRECOLL}/dist/Recoll-${VERSION}-cp3${v}-cp3${v}${m}-win32.whl
+            if test ! -f ${PYRCLDIST}; then
+                pushd ${PYRECOLL}
+                "/c/Program Files (x86)/Python3${v}-32/python" setup-win.py bdist_wheel
+                popd
+            fi
+            chkcp ${PYRCLDIST} $DEST
         done
     fi
 }

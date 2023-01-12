@@ -122,7 +122,7 @@ windows {
   DEFINES += __WIN32__
   DEFINES += UNICODE
   RC_FILE = recoll.rc
-  QCBUILDLOC = Desktop_Qt_5_14_2_MSVC2017_32bit
+  QCBUILDLOC = Desktop_Qt_5_15_2_MSVC2019_32bit
 
   HEADERS += \
     winschedtool.h
