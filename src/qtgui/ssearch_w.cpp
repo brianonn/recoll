@@ -103,7 +103,9 @@ QVariant RclCompleterModel::data(const QModelIndex &index, int role) const
             return QVariant(currentlist[index.row()].first);
         }
     } else if (index.column() == 1 && prefs.showcompleterhitcounts) {
-        return QVariant(QString("%1").arg(currentlist[index.row()].second) + tr(" Hits"));
+        if (currentlist[index.row()].second > 0) {
+            return QVariant(QString("%1").arg(currentlist[index.row()].second) + tr(" Hits"));
+        }
     }
     return QVariant();
 }
@@ -133,7 +135,7 @@ void RclCompleterModel::onPartialWord(int tp, const QString& _qtext, const QStri
         // If there is current text, only show a limited count of
         // matching entries, else show the full history.
         if (onlyspace || prefs.ssearchHistory[i].contains(qtext, Qt::CaseInsensitive)) {
-            currentlist.push_back({prefs.ssearchHistory[i], 1});
+            currentlist.push_back({prefs.ssearchHistory[i], -1});
             if (!onlyspace && ++histmatch >= maxhistmatch)
                 break;
         }
