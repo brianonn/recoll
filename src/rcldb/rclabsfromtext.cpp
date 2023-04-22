@@ -36,6 +36,15 @@
 
 using namespace std;
 
+#ifndef XAPIAN_AT_LEAST
+// Added in Xapian 1.4.2. Define it here for older versions
+#define XAPIAN_AT_LEAST(A,B,C)                                      \
+    (XAPIAN_MAJOR_VERSION > (A) ||                                  \
+     (XAPIAN_MAJOR_VERSION == (A) &&                                \
+      (XAPIAN_MINOR_VERSION > (B) ||                                \
+       (XAPIAN_MINOR_VERSION == (B) && XAPIAN_REVISION >= (C)))))
+#endif
+
 #undef DEBUGABSTRACT  
 #ifdef DEBUGABSTRACT
 #define LOGABS LOGDEB
