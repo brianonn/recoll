@@ -917,6 +917,12 @@ script. Typical values: English, French... See the ABBYY documentation.
 <term><varname>orgmodesubdocs</varname></term>
 <listitem><para>Index org-mode level 1 sections as separate sub-documents This is the default. If set to false, org-mode files will be indexed as plain text
 </para></listitem></varlistentry>
+<varlistentry id="RCL.INSTALL.CONFIG.RECOLLCONF.KIOSHOWSUBDOCS">
+<term><varname>kioshowsubdocs</varname></term>
+<listitem><para>Show embedded document results in KDE dolphin/kio and krunner Embedded documents may clutter the results and are not always easily usable from the kio or
+krunner environment. Setting this variable will restrict the results to standalone
+documents.
+</para></listitem></varlistentry>
 </variablelist></sect3>
 <sect3 id="RCL.INSTALL.CONFIG.RECOLLCONF.SPECLOCATIONS">
 <title>Parameters set for specific locations </title><variablelist>
