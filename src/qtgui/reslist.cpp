@@ -22,6 +22,7 @@
 #include <stdio.h>
 
 #include <memory>
+#include <utility>
 
 #include <qapplication.h>
 #include <qvariant.h>
@@ -569,7 +570,7 @@ int ResList::docnumfromparnum(int block)
 }
 
 // Get range of paragraph numbers which make up the result for document number
-pair<int,int> ResList::parnumfromdocnum(int docnum)
+std::pair<int,int> ResList::parnumfromdocnum(int docnum)
 {
     LOGDEB("parnumfromdocnum: docnum " << docnum << "\n");
     if (m_pager->pageNumber() < 0) {
@@ -874,6 +875,8 @@ void ResList::displayPage()
     progress.setMinimumDuration(2000);
     m_progress = &progress;
     m_text = "";
+#else
+    clear();    
 #endif
     
     m_pager->displayPage(theconfig);
@@ -926,7 +929,7 @@ void ResList::previewExposed(int docnum)
             ).arg(m_curPvDoc - pageFirstDocNum());
         runJS(js);
 #else
-        pair<int,int> blockrange = parnumfromdocnum(m_curPvDoc);
+        std::pair<int,int> blockrange = parnumfromdocnum(m_curPvDoc);
         if (blockrange.first != -1) {
             for (int blockn = blockrange.first;
                  blockn < blockrange.second; blockn++) {
@@ -964,7 +967,7 @@ void ResList::previewExposed(int docnum)
         ).arg(docnum - pageFirstDocNum());
     runJS(js);
 #else
-    pair<int,int>  blockrange = parnumfromdocnum(docnum);
+    std::pair<int,int>  blockrange = parnumfromdocnum(docnum);
 
     // Maybe docnum is -1 or not in this window, 
     if (blockrange.first < 0)
