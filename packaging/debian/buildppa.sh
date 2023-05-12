@@ -9,7 +9,7 @@
 # 20.04LTS focal  2025-04
 # 22.04LTS jammy  2027-04
 # 2023-01 1.34 does not build on bionic.
-SERIES="bionic focal jammy kinetic"
+SERIES="focal jammy kinetic lunar"
 
 PPA_KEYID=7808CE96D38B9201
 
