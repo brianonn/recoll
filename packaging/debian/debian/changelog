@@ -1,3 +1,10 @@
+recoll (1.38.2-1~ppaPPAVERS~SERIES1) SERIES; urgency=low
+
+  * GUI: fix bug in meson build resulting in a qtextbrowser preview and
+    no display on some complex HTML documents (issue #255)
+
+ -- Jean-Francois Dockes <jf@dockes.org>  Thu, 23 May 2024 09:41:00 +0200
+
 recoll (1.38.0-1~ppaPPAVERS~SERIES1) SERIES; urgency=low
 
   * Allow using multiple temporary Xapian indexes and a final merge.  This
