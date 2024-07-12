@@ -50,7 +50,6 @@ python/pyaspell/setup.py
 python/pychm/setup.py
 python/pychm/recollchm.egg-info
 python/recoll/setup-win.py
-python/recoll/setup.py
 qmake
 qtgui/recoll.pro
 qtgui/sshelp

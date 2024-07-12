@@ -1,3 +1,12 @@
+recoll (1.39.2-1~ppaPPAVERS~SERIES1) SERIES; urgency=low
+
+  * Update simdutf version to 5.3.0: the current one was crashing on some
+    processors (issue #267)
+  * Fix a few glitches in filters on newer Linux systems (e.g.  Ubuntu
+    Noble).
+  
+ -- Jean-Francois Dockes <jf@dockes.org>  Fri, 12 Jul 2024 09:22:00 +0200
+
 recoll (1.39.1-1~ppaPPAVERS~SERIES1) SERIES; urgency=low
 
   * GUI: add capability to switch light/dark mode according to desktop
