@@ -13,22 +13,22 @@ SERIES="focal jammy noble oracular"
 
 PPA_KEYID=7808CE96D38B9201
 
-RCLVERS=1.39.1
+RCLVERS=1.39.3
 GSSPVERS=1.1.3
-PPAVERS=2
+PPAVERS=3
 
 PPANAME=recoll15-ppa
-PPANAME=recollexp-ppa
+#PPANAME=recollexp-ppa
 
 # recoll 
-series_rcl=jammy
+series_rcl=
 # KIO
 series_kio=
 # krunner: does not build on focal and bionic because of the 5.90 min version requested in the
 # CMakeLists.txt. Did not try to work around. "jammy mantic noble"
 series_krunner=
 # gssp
-series_gssp=
+series_gssp=oracular
 
 txt=""
 test -n "$series_rcl" && txt="$txt Recoll $RCLVERS on $series_rcl "
