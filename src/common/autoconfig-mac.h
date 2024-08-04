@@ -40,7 +40,7 @@
 #define ICONV_CONST 
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.39.3"
+#define PACKAGE_VERSION "1.39.4"
 
 /* Use QTextBrowser to implement the preview windows */
 #undef PREVIEW_FORCETEXTBROWSER
