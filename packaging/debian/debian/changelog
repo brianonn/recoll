@@ -1,3 +1,10 @@
+recoll (1.39.5-1~ppaPPAVERS~SERIES1) SERIES; urgency=low
+
+  * GUI: fix very ennoying bug where the snippets links don't open the
+    PDF at the indicated page.
+
+ -- Jean-Francois Dockes <jf@dockes.org>  Sun, 07 Aug 2024 08:46:00 +0200
+
 recoll (1.39.4-1~ppaPPAVERS~SERIES1) SERIES; urgency=low
 
   * GUI: only use the qApp colorscheme if the user has not explicitly set
