@@ -300,7 +300,11 @@ const string path_rclpkgdatadir()
                            // Always use relative to exe
                            ""
 #else
+#ifdef RECOLL_DATADIR
                            RECOLL_DATADIR
+#else
+                           ""
+#endif
 #endif
 #ifdef _WIN32
                            // For the python extension (python.exe so path_execdir() is wrong)
