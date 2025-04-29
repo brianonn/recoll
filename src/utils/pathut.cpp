@@ -852,7 +852,7 @@ std::string path_pkgdatadir(
     // anywhere. We try the fixed fallback paths. If this fails, the user will have to set the
     // environment variable.
     std::vector<std::string> paths{path_cat(path_thisexecdir(), "share")};
-    paths.insert(path.end(), alts.begin(), alts.end());
+    paths.insert(paths.end(), alts.begin(), alts.end());
     for (const auto& path : paths) {
         if (path_exists(path_cat(path, tstpath))) {
             datadir = path;
