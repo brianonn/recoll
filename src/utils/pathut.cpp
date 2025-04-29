@@ -851,7 +851,7 @@ std::string path_pkgdatadir(
     // But maybe we are the recoll python extension, and execpath is the python exe which could be
     // anywhere. We try the fixed fallback paths. If this fails, the user will have to set the
     // environment variable.
-    vector<string> paths{path_cat(path_thisexecdir(), "share")};
+    std::vector<std::string> paths{path_cat(path_thisexecdir(), "share")};
     paths.insert(path.end(), alts.begin(), alts.end());
     for (const auto& path : paths) {
         if (path_exists(path_cat(path, tstpath))) {
