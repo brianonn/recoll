@@ -10,9 +10,11 @@
 *.log
 *.o 
 *.obj
+*.orig
 *.pdb
 *.pro.user*
 *.pyc
+*.rej
 *.sdf
 *.tlog
 *~
