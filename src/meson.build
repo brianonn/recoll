@@ -23,15 +23,16 @@ project(
     'recoll',
     ['cpp', 'c'],
     license: 'GPL 2+',
-    # We'd like to use version: files('RECOLL-VERSION.txt') but this is a 0.57 feature. 
-    # Ubuntu focal has 0.53 and is supported until 2025-04.
+    # We'd like to use version: files('RECOLL-VERSION.txt'), but we can't anyways since it may
+    # have a pre-release string attached, and we can't use a pre-release version for the shared lib. 
+    # Thus we have to use setversion.sh instead.
     version: '1.43.2', # VERSIONCOMMENT keep this here, used by setversion.sh
     # Note: follow_symlinks will be needed in the future but not supported by all the versions we
     # need at the moment
     default_options: ['cpp_std=c++17', 'buildtype=debugoptimized',
                        #'follow_symlinks=true'
                      ],
-    meson_version: '>=0.53',
+    meson_version: '>=0.60',
 )
 
 # Shared lib versions.
